@@ -2,32 +2,26 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Parse JavaScript Todo App</title>
-    <link href="css/todos.css" media="all" rel="stylesheet" type="text/css"/>
+    <title>My Packing Lists</title>
+    <link href="css/packing.css" media="all" rel="stylesheet" type="text/css"/>
     <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
     <script src="js/underscore.js"></script>
     <script src="http://www.parsecdn.com/js/parse-1.2.13.min.js"></script>
-    <script src="js/todos.js"></script>
+    <script src="js/packinglist.js"></script>
   </head>
 
   <body>
 
     <!-- Todo App Interface -->
 
-    <div id="todoapp">
+    <div id="packingapp">
       <div class="title">
-        <h1>Parse Todos</h1>
+        <h1>My Packing Lists</h1>
       </div>
 
       <div class="content">
       </div>
     </div>
-
-    <div id="credits">
-      Powered by <a href="https://www.parse.com">Parse</a> using the <a href="https://www.parse.com/docs/js_guide">JavaScript SDK</a>.<br /><br />
-      Learn how we built it in the <a href='https://parse.com/tutorials/todo-app-with-javascript'>tutorial</a>.
-    </div>
-
     <!-- Templates -->
 
     <script type="text/template" id="login-template">
@@ -51,44 +45,43 @@
       </div>
     </script>
 
-    <script type="text/template" id="manage-todos-template">
+    <script type="text/template" id="manage-trips-template">
       <div id="user-info">
         Signed in as <%= Parse.User.current().escape("username") %> (<a href="#" class="log-out">Log out</a>)
       </div>
 
+<h2>My Trips</h2>
       <div class="section">
-
         <header id="header">
-          <input id="new-todo" placeholder="What needs to be done?" type="text" />
+          <input id="new-trip" placeholder="Add a Trip" type="text" />
         </header>
-
-        <div id="main">
+<div id="main">
           <input id="toggle-all" type="checkbox">
           <label for="toggle-all">Mark all as complete</label>
           
-          <ul id="todo-list">
+          <ul id="trip-list">
             <img src='images/spinner.gif' class='spinner' />
           </ul>
         </div>
 
-        <div id="todo-stats"></div>
+
+        <div id="trip-stats"></div>
       </div>
     </script>
 
-    <script type="text/template" id="item-template">
+    <script type="text/template" id="trip-template">
       <li class="<%= done ? 'completed' : '' %>">
 	<div class="view">
 	  <input class="toggle" type="checkbox" <%= done ? 'checked="checked"' : '' %>>
-	  <label class="todo-content"><%= _.escape(content) %></label>
-	  <button class="todo-destroy"></button>
+	  <label class="trip-content"><%= _.escape(tripName) %></label>
+	  <button class="trip-destroy"></button>
 	</div>
-	<input class="edit" value="<%= _.escape(content) %>">
+	<input class="edit" value="<%= _.escape(tripName) %>">
       </li>
     </script>
-
     <script type="text/template" id="stats-template">
       <footer id="footer">
-	<span id="todo-count"><strong><%= remaining %></strong> <%= remaining == 1 ? 'item' : 'items' %> left</span>
+	<span id="trip-count"><strong><%= remaining %></strong> active <%= remaining == 1 ? 'trip' : 'trips' %></span>
 	<ul id="filters">
 	  <li>
 	    <a href="javascript:void(0)" id="all" class="selected">All</a>
