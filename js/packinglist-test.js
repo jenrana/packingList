@@ -6,7 +6,12 @@ $(function() {
     Parse.initialize("iEHnCz6tBbfat40smeJcdlYuPCcPfI0XOk56W36o", "X6XDmXP6ETqpgK1n3yAD9kyDtSmk0xGrFeIITQvC");
 
     
-   
+    
+    
+    
+// TRIPS ////////////////////////////////////////////////////////////////////////////
+
+    
   // Trip Model
   // ----------
 
@@ -37,6 +42,8 @@ $(function() {
       filter: "all"
     }
   });
+    
+   
 
   // Trip Collection
   // ---------------
@@ -69,6 +76,7 @@ $(function() {
     }
 
   });
+        
 
   // Trip Item View
   // --------------
@@ -118,7 +126,7 @@ $(function() {
       this.input.focus();
     },
 
-    // Close the `"editing"` mode, saving changes to the todo.
+    // Close the `"editing"` mode, saving changes to the item.
     close: function() {
       this.model.save({content: this.input.val()});
       $(this.el).removeClass("editing");
@@ -136,15 +144,16 @@ $(function() {
 
   });
 
+  // The Trip Application
+  // ---------------
 
-
-  // The main view that lets a user manage their todo items
+  // The main view that lets a user manage their trips
   var ManageTripView = Parse.View.extend({
 
     // Our template for the line of statistics at the bottom of the app.
     statsTemplate: _.template($('#stats-template').html()),
 
-    // Delegated events for creating new items, and clearing completed ones.
+    // Delegated events for creating new trips, and clearing completed ones.
     events: {
       "keypress #new-trip":  "createOnEnter",
       "click #clear-completed": "clearCompleted",
@@ -156,7 +165,7 @@ $(function() {
     el: ".content",
 
     // At initialization we bind to the relevant events on the `Trips`
-    // collection, when items are added or changed. Kick things off by
+    // collection, when trips are added or changed. Kick things off by
     // loading any preexisting trips that might be saved to Parse.
     initialize: function() {
       var self = this;
@@ -232,7 +241,7 @@ $(function() {
       }
     },
 
-    // Resets the filters to display all todos
+    // Resets the filters to display all items
     resetFilters: function() {
       this.$("ul#filters a").removeClass("selected");
       this.$("ul#filters a#all").addClass("selected");
@@ -288,6 +297,190 @@ $(function() {
     }
   });
 
+    
+    
+    
+    
+// Packing List ////////////////////////////////////////////////////////////  
+    
+    
+ // Packing List Model
+  // ----------
+
+  // Our basic list model has `content`, `order`, and `done` attributes.
+  var Packinglist = Parse.Object.extend("Packinglist", {
+    // Default attributes for the items.
+    defaults: {
+      content: "empty list...",
+      done: false
+    },
+
+    // Ensure that each list created has `content`.
+    initialize: function() {
+      if (!this.get("content")) {
+        this.set({"content": this.defaults.content});
+      }
+    },
+
+    // Toggle the `done` state of this list item.
+    toggle: function() {
+      this.save({done: !this.get("done")});
+    }
+  });
+
+
+  // PackingList Collection
+  // ---------------
+
+  var PackingListCollection = Parse.Collection.extend({
+
+    // Reference to this collection's model.
+    model: Packinglist,
+
+    // Filter down the list of all items that are packed.
+    done: function() {
+      return this.filter(function(packinglist){ return packinglist.get('done'); });
+    },
+
+    // Filter down the list to only items that are still unpacked.
+    remaining: function() {
+      return this.without.apply(this, this.done());
+    },
+
+    // We keep the items in sequential order, despite being saved by unordered
+    // GUID in the database. This generates the next order number for new items.
+    nextOrder: function() {
+      if (!this.length) return 1;
+      return this.last().get('order') + 1;
+    },
+
+    // Items are sorted by their original insertion order.
+    comparator: function(packinglist) {
+      return packinglist.get('order');
+    }
+
+  });
+    
+    
+    
+    
+
+  // Packing List Main View
+  // --------------
+
+  // The DOM element for a item...
+  var PackingListMainView = Parse.View.extend({
+    template: _.template($("#packing-list-template").html()),
+      
+    el: ".content",
+      
+    render: function(){
+        var attributes = this.model.toJSON();
+        this.$el.html(this.template(attributes));
+    }
+    
+  });   
+     
+    
+ // The DOM element for a todo item...
+  var PackingListView = Parse.View.extend({
+
+    //... is a list tag.
+    tagName:  "li",
+
+    // Cache the template function for a single item.
+    template: _.template($('#item-template').html()),
+
+    // The DOM events specific to an item.
+    events: {
+      "click .toggle"              : "toggleDone",
+      "dblclick label.todo-content" : "edit",
+      "click .todo-destroy"   : "clear",
+      "keypress .edit"      : "updateOnEnter",
+      "blur .edit"          : "close"
+    },
+
+    // The TodoView listens for changes to its model, re-rendering. Since there's
+    // a one-to-one correspondence between a Todo and a TodoView in this
+    // app, we set a direct reference on the model for convenience.
+    initialize: function() {
+      _.bindAll(this, 'render', 'close', 'remove');
+      this.model.bind('change', this.render);
+      this.model.bind('destroy', this.remove);
+    },
+
+    // Re-render the contents of the todo item.
+    render: function() {
+      $(this.el).html(this.template(this.model.toJSON()));
+      this.input = this.$('.edit');
+      return this;
+    },
+
+    // Toggle the `"done"` state of the model.
+    toggleDone: function() {
+      this.model.toggle();
+    },
+
+    // Switch this view into `"editing"` mode, displaying the input field.
+    edit: function() {
+      $(this.el).addClass("editing");
+      this.input.focus();
+    },
+
+    // Close the `"editing"` mode, saving changes to the todo.
+    close: function() {
+      this.model.save({content: this.input.val()});
+      $(this.el).removeClass("editing");
+    },
+
+    // If you hit `enter`, we're through editing the item.
+    updateOnEnter: function(e) {
+      if (e.keyCode == 13) this.close();
+    },
+
+    // Remove the item, destroy the model.
+    clear: function() {
+      this.model.destroy();
+    }
+
+  });
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+// Full Trips Item View
+  // --------------
+  var MainTripsView = Parse.View.extend({
+      tagName: "div",
+      id: "myTrips"
+  
+  });
+      
+  
+    
+    
+    
+// Login View
+    
   var LogInView = Parse.View.extend({
     events: {
       "submit form.login-form": "logIn",
@@ -353,8 +546,8 @@ $(function() {
     }
   });
 
-// The main view for the app
-var AppView = Parse.View.extend({
+  // The main view for the app
+  var AppView = Parse.View.extend({
     // Instead of generating a new element, bind to the existing skeleton of
     // the App already present in the HTML.
     el: $("#packingapp"),
@@ -372,41 +565,35 @@ var AppView = Parse.View.extend({
     }
   });
 
-   
-    
-    
-// The main view for the Packing List 
-var PackingView = Parse.View.extend({
-    // Instead of generating a new element, bind to the existing skeleton of
-    // the App already present in the HTML.
-    el: ".content",
-
-    initialize: function() {
-      this.render();
-    },
-
-    render: function() {
-      this.$el.html(_.template($("#packing-template").html()));
-    }   
-});
     
     
     
-    
+  // Routers
     
     
   var AppRouter = Parse.Router.extend({
     routes: {
+      "trips": "trips",
+      "lists": "lists",
       "all": "all",
       "active": "active",
       "completed": "completed",
-      "lists": "lists",
-      "trips": "trips"
+      "allpack": "allpack",
+      "topack": "topack",
+      "packed": "packed",
+      "mylist": "mylist"
     },
 
     initialize: function(options) {
     },
 
+    trips: function() {
+		this.loadView(new MainTripsView());
+	},
+	lists: function() {
+		this.loadView(new PackingListView());
+	},
+      
     all: function() {
       state.set({ filter: "all" });
     },
@@ -418,11 +605,21 @@ var PackingView = Parse.View.extend({
     completed: function() {
       state.set({ filter: "completed" });
     },
-    lists: function(){
-		this.loadView(new PackingView());      
+
+    allpack: function() {
+      state.set({ filter: "allpack" });
     },
-    trips: function(){
-		this.loadView(new ManageTripView());      
+
+    topack: function() {
+      state.set({ filter: "topack" });
+    },
+
+    packed: function() {
+      state.set({ filter: "packed" });
+    },
+
+    mylist: function() {
+      state.set({ filter: "mylist" });
     },
 	loadView : function(view) {
 		this.view && (this.view.close ? this.view.close() : this.view.remove());
