@@ -118,7 +118,7 @@ $(function() {
       this.input.focus();
     },
 
-    // Close the `"editing"` mode, saving changes to the todo.
+    // Close the `"editing"` mode, saving changes to the item.
     close: function() {
       this.model.save({content: this.input.val()});
       $(this.el).removeClass("editing");
@@ -138,7 +138,7 @@ $(function() {
 
 
 
-  // The main view that lets a user manage their todo items
+  // The main view that lets a user manage their items
   var ManageTripView = Parse.View.extend({
 
     // Our template for the line of statistics at the bottom of the app.
@@ -232,7 +232,7 @@ $(function() {
       }
     },
 
-    // Resets the filters to display all todos
+    // Resets the filters to display all items
     resetFilters: function() {
       this.$("ul#filters a").removeClass("selected");
       this.$("ul#filters a#all").addClass("selected");
@@ -382,7 +382,7 @@ var AppView = Parse.View.extend({
   var Plist = Parse.Object.extend("PackingLists", {
     // Default attributes for the packing list item.
     defaults: {
-      content: "empty todo...",
+      content: "empty item...",
       done: false
     },
 
@@ -441,7 +441,7 @@ var AppView = Parse.View.extend({
   // Packing list item View
   // --------------
 
-  // The DOM element for a todo item...
+  // The DOM element for an item...
   var PackingListView = Parse.View.extend({
 
     //... is a list tag.
@@ -468,7 +468,7 @@ var AppView = Parse.View.extend({
       this.model.bind('destroy', this.remove);
     },
 
-    // Re-render the contents of the todo item.
+    // Re-render the contents of the item.
     render: function() {
       $(this.el).html(this.template(this.model.toJSON()));
       this.input = this.$('.edit');
@@ -507,7 +507,7 @@ var AppView = Parse.View.extend({
   // The Application
   // ---------------
 
-  // The main view that lets a user manage their todo items
+  // The main view that lets a user manage their items
   var ManagePlistView = Parse.View.extend({
 
     // Our template for the line of statistics at the bottom of the app.
@@ -533,17 +533,23 @@ var AppView = Parse.View.extend({
 
       _.bindAll(this, 'addOne', 'addAll', 'addSome', 'render', 'toggleAllComplete', 'logOut', 'createOnEnter');
         
-      // Main todo management template
+      // Main packing management template
       this.$el.html(_.template($("#packing-template").html()));
       
       this.input = this.$("#new-list-item");
       this.allCheckbox = this.$("#toggle-list-all")[0];
       
-      // Create our collection of Todos
+      // Create our collection of items
       this.plitems = new PackingList;
 
-      // Setup the query for the collection to look for items from the current trip
+      // Setup the query for the collection to look for items from the current trip 
       this.plitems.query = new Parse.Query(Plist);
+      this.plitems.query.equalTo("trip", {
+        __type: "Pointer",
+        className: "Trips",
+        objectId: "aEv4KcM3WH"
+    });
+    //this.plitems.query.equalTo("trip", undefined);
         
       this.plitems.bind('add',     this.addOne);
       this.plitems.bind('reset',   this.addAll);
@@ -552,7 +558,6 @@ var AppView = Parse.View.extend({
       // Fetch all the items for this trip
       this.plitems.fetch();
       state.on("change", this.filter, this);
-        console.log("");
     },
 // Logs out the user and shows the login view
     logOut: function(e) {
@@ -600,7 +605,7 @@ var AppView = Parse.View.extend({
       }
     },
 
-    // Resets the filters to display all todos
+    // Resets the filters to display all items
     resetFilters: function() {
       this.$("ul#filters a").removeClass("selected");
       this.$("ul#filters a#packall").addClass("selected");
@@ -636,7 +641,12 @@ var AppView = Parse.View.extend({
         content: this.input.val(),
         order:   this.plitems.nextOrder(),
         done:    false,
-        ACL:     new Parse.ACL(Parse.User.current())
+        ACL:     new Parse.ACL(Parse.User.current()),
+        trip: {
+        __type: "Pointer",
+        className: "Trips",
+        objectId: "aEv4KcM3WH"
+        }
       });
 
       this.input.val('');
