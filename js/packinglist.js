@@ -528,7 +528,7 @@ var AppView = Parse.View.extend({
     // At initialization we bind to the relevant events on the `PackingList`
     // collection, when items are added or changed. Kick things off by
     // loading any preexisting items that might be saved to Parse.
-    initialize: function() {
+    initialize: function(id) {
       var self = this;
 
       _.bindAll(this, 'addOne', 'addAll', 'addSome', 'render', 'toggleAllComplete', 'logOut', 'createOnEnter');
@@ -547,9 +547,8 @@ var AppView = Parse.View.extend({
       this.plitems.query.equalTo("trip", {
         __type: "Pointer",
         className: "Trips",
-        objectId: "aEv4KcM3WH"
+        objectId: id
     });
-    //this.plitems.query.equalTo("trip", undefined);
         
       this.plitems.bind('add',     this.addOne);
       this.plitems.bind('reset',   this.addAll);
@@ -636,7 +635,6 @@ var AppView = Parse.View.extend({
     createOnEnter: function(e) {
       var self = this;
       if (e.keyCode != 13) return;
-
       this.plitems.create({
         content: this.input.val(),
         order:   this.plitems.nextOrder(),
@@ -645,7 +643,7 @@ var AppView = Parse.View.extend({
         trip: {
         __type: "Pointer",
         className: "Trips",
-        objectId: "aEv4KcM3WH"
+        objectId: currentListID
         }
       });
 
@@ -664,14 +662,14 @@ var AppView = Parse.View.extend({
       this.plitems.each(function (plitem) { plitem.save({'done': done}); });
     }
   });
-    
+  var currentListID;  
       
   var AppRouter = Parse.Router.extend({
     routes: {
       "all": "all",
       "active": "active",
       "completed": "completed",
-      "lists": "lists",
+     "lists/:id": "lists",
       "pack-all": "packall",
       "not-packed": "notpacked",
       "packed": "packed",
@@ -702,8 +700,10 @@ var AppView = Parse.View.extend({
     packed: function() {
       state.set({ filter: "packed" });
     },
-    lists: function(){
-		this.loadView(new ManagePlistView());      
+    lists: function(id){
+		currentListID = id;
+        this.loadView(new ManagePlistView(id));
+        console.log(id);
     },
 	loadView : function(view) {
 		this.view && (this.view.close ? this.view.close() : this.view.remove());

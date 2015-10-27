@@ -73,7 +73,7 @@
       <li class="<%= done ? 'completed' : '' %>">
 	<div class="view">
 	  <input class="toggle" type="checkbox" <%= done ? 'checked="checked"' : '' %>>
-	  <label class="trip-content"><a href="#lists"><%= _.escape(tripName) %></a></label>
+	  <label class="trip-content"><a href="#lists/<%= _.escape(objectId) %>"><%= _.escape(tripName) %></a></label>
 	  <button class="trip-destroy"></button>
 	</div>
 	<input class="edit" value="<%= _.escape(tripName) %>">
