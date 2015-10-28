@@ -148,7 +148,6 @@ $(function() {
     events: {
       "keypress #new-trip":  "createOnEnter",
       "click #clear-completed": "clearCompleted",
-      "click #toggle-all": "toggleAllComplete",
       "click .log-out": "logOut",
       "click ul#filters a": "selectFilter"
     },
@@ -161,13 +160,12 @@ $(function() {
     initialize: function() {
       var self = this;
 
-      _.bindAll(this, 'addOne', 'addAll', 'addSome', 'render', 'toggleAllComplete', 'logOut', 'createOnEnter');
+      _.bindAll(this, 'addOne', 'addAll', 'addSome', 'render', 'logOut', 'createOnEnter');
 
       // Main trip management template
       this.$el.html(_.template($("#manage-trips-template").html()));
       
       this.input = this.$("#new-trip");
-      this.allCheckbox = this.$("#toggle-all")[0];
 
       // Create our collection of Trips
       this.trips = new TripList;
@@ -208,7 +206,6 @@ $(function() {
 
       this.delegateEvents();
 
-      this.allCheckbox.checked = !remaining;
     },
 
     // Filters the list based on which type of filter is selected
@@ -244,7 +241,7 @@ $(function() {
     addOne: function(trip) {
       var view = new TripView({model: trip});
       this.$("#trip-list").append(view.render().el);
-    },
+    }, 
 
     // Add all items in the trips collection at once.
     addAll: function(collection, filter) {
@@ -269,7 +266,8 @@ $(function() {
         order:   this.trips.nextOrder(),
         done:    false,
         user:    Parse.User.current(),
-        ACL:     new Parse.ACL(Parse.User.current())
+        ACL:     new Parse.ACL(Parse.User.current()),
+        objectId: this.trips.id
       });
 
       this.input.val('');
@@ -282,10 +280,6 @@ $(function() {
       return false;
     },
 
-    toggleAllComplete: function () {
-      var done = this.allCheckbox.checked;
-      this.trips.each(function (trip) { trip.save({'done': done}); });
-    }
   });
 
   var LogInView = Parse.View.extend({
@@ -516,8 +510,7 @@ var AppView = Parse.View.extend({
     // Delegated events for creating new items, and clearing completed ones.
     events: {
       "keypress #new-list-item":  "createOnEnter",
-      "click #clear-completed": "clearCompleted",
-      "click #toggle-list-all": "toggleAllComplete",
+      "click #clear-packed": "clearCompleted",
       "click .log-out": "logOut",
       "click ul#filters a": "selectFilter"
     },
@@ -531,13 +524,12 @@ var AppView = Parse.View.extend({
     initialize: function(id) {
       var self = this;
 
-      _.bindAll(this, 'addOne', 'addAll', 'addSome', 'render', 'toggleAllComplete', 'logOut', 'createOnEnter');
+      _.bindAll(this, 'addOne', 'addAll', 'addSome', 'render', 'logOut', 'createOnEnter');
         
       // Main packing management template
       this.$el.html(_.template($("#packing-template").html()));
       
       this.input = this.$("#new-list-item");
-      this.allCheckbox = this.$("#toggle-list-all")[0];
       
       // Create our collection of items
       this.plitems = new PackingList;
@@ -579,7 +571,6 @@ var AppView = Parse.View.extend({
 
       this.delegateEvents();
 
-      this.allCheckbox.checked = !remaining;
     },
 
    
@@ -595,7 +586,7 @@ var AppView = Parse.View.extend({
       var filterValue = state.get("filter");
       this.$("ul#filters a").removeClass("selected");
       this.$("ul#filters a#" + filterValue).addClass("selected");
-      if (filterValue === "packall") {
+      if (filterValue === "pack-all") {
         this.addAll();
       } else if (filterValue === "packed") {
         this.addSome(function(item) { return item.get('done') });
@@ -607,7 +598,7 @@ var AppView = Parse.View.extend({
     // Resets the filters to display all items
     resetFilters: function() {
       this.$("ul#filters a").removeClass("selected");
-      this.$("ul#filters a#packall").addClass("selected");
+      this.$("ul#filters a#pack-all").addClass("selected");
       this.addAll();
     },
       
@@ -657,11 +648,10 @@ var AppView = Parse.View.extend({
       return false;
     },
 
-    toggleAllComplete: function () {
-      var done = this.allCheckbox.checked;
-      this.plitems.each(function (plitem) { plitem.save({'done': done}); });
-    }
+  
   });
+  
+  // id of current list, used when saving items
   var currentListID;  
       
   var AppRouter = Parse.Router.extend({
